@@ -32,7 +32,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INITAL_APPS = [
-    'modeltranslation', # Third party app for translation
+    # 'modeltranslation', # Third party app for translation
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
