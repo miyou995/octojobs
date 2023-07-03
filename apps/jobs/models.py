@@ -4,14 +4,17 @@ from django.utils.translation import gettext as _
 from django.conf import settings
 from tinymce import models as tinymce_models
 
+from django.utils.timesince import timesince
+from datetime import datetime
+
 # Create your models here.
-# JOB_TYPE_CHOICES = (
-#     ("FULLTIME", _("Full Time")),
-#     ("PART_TIME", _("Part Time")),
-#     ("FREELANCER",_("Freelancer")),
-#     ("INTERNSHIP", _("Internship")),
-#     ("TEMPORARY", _("Temporary")),
-# )
+JOB_TYPE_CHOICES = (
+    ("FULLTIME", _("Full Time")),
+    ("PART_TIME", _("Part Time")),
+    ("FREELANCER",_("Freelancer")),
+    ("INTERNSHIP", _("Internship")),
+    ("TEMPORARY", _("Temporary")),
+)
 # type        = models.CharField(choices=JOB_TYPE_CHOICES, default="FREELANCER", verbose_name=_("Job type")) # on Job Model
 
 BUDGET_CHOICES = (
@@ -27,18 +30,31 @@ STATUS_CHOICES = (
     ("ALLOCATED",_("Allocated")),
     ("CLOSED", _("Closed")),
 )
+JOB_CATEGORY_CHOICES = (
+    ("ACCOUNTING_AND_FINANCE", _("Accounting and Finance")),
+    ("CLERICAL_&_DATA_ENTRY", _("Clerical & Data Entry")),
+    ("COUNSELING",_("Counseling")),
+    ("COURT_ADMINISTRATION", _("Court Administration")),
+    ("HUMAN_RESOURCES", _("Human Resources")),
+    ("INVESRIGATIVE", _("Investigative")),
+    ("IT_AND_COMPUTERS", _("IT and Computers")),
+    ("LAW_ENFORCEMENT",_("Law Enforcement")),
+    ("MANAGEMENT", _("Management")),
+    ("PUBLIC_RELATIONS", _("Public Relations")),
+)
+    
 
 
 
-class Category(models.Model):
-    parent  = models.ForeignKey("self", on_delete=models.CASCADE, null=True, blank=True)
-    is_active =  models.BooleanField(default=True)
 
-    name = models.CharField(max_length=50)
-    created         = models.DateTimeField(verbose_name='Date de Création', auto_now_add=True)
-    updated         = models.DateTimeField(verbose_name='Date de dernière mise à jour', auto_now=True)
-    def __str__(self):
-        return str(self.name)
+#class Category(models.Model):
+ #   parent  = models.ForeignKey("self", on_delete=models.CASCADE, null=True, blank=True)
+  #  is_active =  models.BooleanField(default=True)
+    #name = models.CharField(max_length=50)
+    #created         = models.DateTimeField(verbose_name='Date de Création', auto_now_add=True)
+    #updated         = models.DateTimeField(verbose_name='Date de dernière mise à jour', auto_now=True)
+    #def __str__(self):
+     #   return str(self.name)
 
 class Tag(models.Model):
     name = models.CharField(max_length=50)
@@ -47,24 +63,46 @@ class Tag(models.Model):
     updated         = models.DateTimeField(verbose_name='Date de dernière mise à jour', auto_now=True)
 
 
+#class Type(models.Model):
+ #   parent  = models.ForeignKey("self", on_delete=models.CASCADE, null=True, blank=True)
+  #  is_active =  models.BooleanField(default=True)
 
+   # name = models.CharField(max_length=50)
+    ##created         = models.DateTimeField(verbose_name='Date de Création', auto_now_add=True)
+    #updated         = models.DateTimeField(verbose_name='Date de dernière mise à jour', auto_now=True)
+    #def __str__(self):
+     #   return str(self.name)
 class Job(models.Model):
     title       = models.CharField( verbose_name=_("job title"), max_length=150)
-    slug        = models.CharField( verbose_name=_("job url"), max_length=150)
-    category    = models.ForeignKey(Category, verbose_name=_("Category"), on_delete=models.CASCADE)
+    type        = models.CharField(choices=JOB_TYPE_CHOICES, default="FREELANCER",max_length=20, verbose_name=_("Job type")) 
+    # on Job Model
+
+    def get_type_display(self):
+        return dict(self.JOB_TYPE_CHOICES).get(self.type, "")
+    category    =  models.CharField(choices=JOB_CATEGORY_CHOICES, default="ACCOUNTING_AND_FINANCE",max_length=50, verbose_name=_("Job category"))
     tags        = models.ManyToManyField(Tag, verbose_name=_("tags"))
     appliants   = models.ManyToManyField(settings.AUTH_USER_MODEL, through='Application')
     status      = models.CharField(choices=STATUS_CHOICES, default="PENDING", verbose_name=_("Status type"), max_length=20)
     location    = models.ForeignKey("core.Commune", verbose_name=_(""), on_delete=models.CASCADE)
-    description   = tinymce_models.HTMLField(verbose_name='Text a propos', blank=True, null=True)
+    description   =  models.CharField( verbose_name=_("description"), max_length=150)
 
     budget      = models.PositiveSmallIntegerField(choices=BUDGET_CHOICES, default=1, verbose_name="Type de commande")
+    def get_budget_display(self):
+        for choice in BUDGET_CHOICES:
+            if choice[0] == self.budget:
+                return choice[1]
+        return ""
     duration    = models.IntegerField(verbose_name=_("Number of days"), null=True, blank=True)
     expiration  = models.DateField(blank=True, null=True)
     deadline    = models.DateField(blank=True, null=True)
     is_active =  models.BooleanField(default=False)
 
     created     = models.DateTimeField(verbose_name='Date de Création', auto_now_add=True)
+    def publication_period(self):
+        now = datetime.now()
+        time_since_created = timesince(self.created)
+        return f"Il y a {time_since_created}"
+
     updated     = models.DateTimeField(verbose_name='Date de dernière mise à jour', auto_now=True)
 
     def __str__(self):
@@ -76,4 +114,11 @@ class Application(models.Model):
     selected    = models.BooleanField(default=False)
     created     = models.DateTimeField(verbose_name='Date de Création', auto_now_add=True)
     updated     = models.DateTimeField(verbose_name='Date de dernière mise à jour', auto_now=True)
+
+
+#class Form(models.Model):
+    #name = models.CharField(max_length=100)
+    #email = models.EmailField()
+    #cv_file = models.FileField(upload_to='cv_files/')
+
 
